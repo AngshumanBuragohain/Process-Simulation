@@ -1,0 +1,182 @@
+%% Crushing of sand or comminution of sand grains of size categories
+% m1,m2....m5 for given mass-dependent pulverisation rates s1,s2....s5
+% The initial mass fraction matrix is given and the process is described
+% by discontinuous milling given by: dmi/dt = -si*mi(t)+ ?sj*mj(t)*bi,j.
+% Aims:
+% 1. Solve the governing equations using RK4 method.
+% 2. Plot the mass evolution of each size category as a function of time.
+% 3. Determine the time required to comminute 99.9% of sand grains to m5.
+% 4. Variation of time step to see the effect on result and determine
+%    the optimum time step
+
+%%
+clear all;
+close all;
+
+%% To run the program for different values of time step, n is initialized
+%which can be changed according to the time step required by the user
+%Relation between n and time step is determined in line 30
+n=5;
+
+%% Variables for testing the optimum time interval for the program
+delt = zeros(1,n);
+m99_9 = zeros(1,n);
+t99_9 = zeros(1,n);
+err = zeros(1,n-1);
+itn=zeros(1,n-1);
+
+%% Running loop for various time intervals 10^-2,10^-3,10^-4,10^-5,10^-6
+for n=1:n
+    dt=10^(-2-(n-1));
+    delt(n)=dt;
+    
+    % Start time
+    tstart = 0;
+
+    % End time
+    tend = 50;
+
+    % Time vector
+    t = tstart:dt:tend;
+    
+    %% Mass fraction, communition rate, grain size category variables initialization 
+    % Mass-dependent comminution rate s1, s2, s3, s4, s5 written in a 1-D array
+    s = [0.5 0.4 0.3 0.2 0.0]; 
+
+    % Mass fraction matrix written in 4x5 matrix
+    b = [0.0 0.0 0.0 0.0 ; 
+         0.4 0.0 0.0 0.0 ;
+         0.3 0.4 0.0 0.0 ;
+         0.2 0.3 0.3 0.0 ;
+         0.1 0.3 0.7 1.0];
+
+    % Allocation of the solution vector, each vector will contain N no. of solutions 
+    % corresponding to the number of time stepsdetermined by length(t)
+    m1 = zeros(1,length(t));
+    m2 = zeros(1,length(t));
+    m3 = zeros(1,length(t));
+    m4 = zeros(1,length(t));
+    m5 = zeros(1,length(t));
+
+    % Initial mass for each grain size category
+    m1(1) = 100;
+    m2(1) = 0;
+    m3(1) = 0;
+    m4(1) = 0;
+    m5(1) = 0;
+
+    %% Initialising 5 varibales which will assume one solution per iteration for
+    % the five grain size category. This is done because assigning m1, m2...
+    % vectors to the function handlers f1, f2... complicates the code and
+    % vector elements with changing index cannot be assigned to function
+    % handlers.
+    %   1st iteration: y1=m1(1) , y2=m2(1) .........
+    %   2nd iteration: y1=m1(2) , y2=m2(2) .........
+    %   ........
+    y1 = 100; 
+    y2 = 0; 
+    y3 = 0; 
+    y4 = 0; 
+    y5 = 0;
+
+    %% Assigning the RHS of five governing differential equations to function
+    % handlers. Governing equation: dmi/dt = -si*mi(t)+ ?sj*mj(t)*bi,j. 
+    f1=@(y1) -s(1)*y1;
+    f2=@(y1,y2) b(2,1)*s(1)*y1 - s(2)*y2 ;
+    f3=@(y1,y2,y3) b(3,1)*s(1)*y1 + b(3,2)*s(2)*y2 - s(3)*y3 ;
+    f4=@(y1,y2,y3,y4) b(4,1)*s(1)*y1 + b(4,2)*s(2)*y2 + b(4,3)*s(3)*y3 - s(4)*y4 ;
+    f5=@(y1,y2,y3,y4,y5) b(5,1)*s(1)*y1 + b(5,2)*s(2)*y2 + b(5,3)*s(3)*y3 + b(5,4)*s(4)*y4 - s(5)*y5 ;
+    
+    %% Running the loop for mass evolution
+    for i=1:length(t)-1
+        
+        y1=m1(i);
+        %RK4 method to compute mass evolution for m1 size category
+        k1=f1(y1);
+        k2=f1(y1+(dt*k1/2));
+        k3=f1(y1+(dt*k2/2));
+        k4=f1(y1+dt*k3);
+        m1(i+1)=m1(i)+(dt/6)*(k1+(2*(k2+k3))+k4);
+
+        y2=m2(i);
+        %RK4 method to compute mass evolution for m2 size category
+        k1=f2(y1,y2);
+        k2=f2(y1+(dt*k1/2),y2+(dt*k1/2));
+        k3=f2(y1+(dt*k2/2),y2+(dt*k2/2));
+        k4=f2(y1+dt*k3,y2+dt*k3);
+        m2(i+1)=m2(i)+(dt/6)*(k1+(2*(k2+k3))+k4);
+
+        y3=m3(i);
+        %RK4 method to compute mass evolution for m3 size category
+        k1=f3(y1,y2,y3);
+        k2=f3(y1+(dt*k1/2),y2+(dt*k1/2),y3+(dt*k1/2));
+        k3=f3(y1+(dt*k2/2),y2+(dt*k2/2),y3+(dt*k2/2));
+        k4=f3(y1+dt*k3,y2+dt*k3,y3+dt*k3);
+        m3(i+1)=m3(i)+(dt/6)*(k1+(2*(k2+k3))+k4);
+
+        y4=m4(i);
+        %RK4 method to compute mass evolution for m4 size category
+        k1=f4(y1,y2,y3,y4);
+        k2=f4(y1+(dt*k1/2),y2+(dt*k1/2),y3+(dt*k1/2),y4+(dt*k1/2));
+        k3=f4(y1+(dt*k2/2),y2+(dt*k2/2),y3+(dt*k2/2), y4+(dt*k2/2));
+        k4=f4(y1+dt*k3,y2+dt*k3,y3+dt*k3, y4 +dt*k3);
+        m4(i+1)=m4(i)+(dt/6)*(k1+(2*(k2+k3))+k4); 
+
+        y5=m5(i);
+        %RK4 method to compute mass evolution for m5 size category
+        k1=f5(y1,y2,y3,y4,y5);
+        k2=f5(y1+(dt*k1/2),y2+(dt*k1/2),y3+(dt*k1/2),y4+(dt*k1/2),y5+(dt*k1/2));
+        k3=f5(y1+(dt*k2/2),y2+(dt*k2/2),y3+(dt*k2/2),y4+(dt*k2/2),y5+(dt*k2/2));
+        k4=f5(y1+dt*k3,y2+dt*k3,y3+dt*k3, y4 +dt*k3,y5+dt*k3);
+        m5(i+1)=m5(i)+(dt/6)*(k1+(2*(k2+k3))+k4);
+
+    end
+    %% Inspection of time at which 99.9% of mass comminutes to size category m5
+
+    for i=1:length(t)-1
+        if m5(i)>=99.9000       %Condition for 99.9% initial mass to comminute to m5
+            m99_9(n)=m5(i);
+            t99_9(n)=t(i-1);
+            break
+        end
+    end
+    
+    % Error calculation by comparing with the previous iteration result
+    if(n>=2)
+        err(n)=t99_9(n)-t99_9(n-1);
+        itn(n)=n-1;
+    end
+    
+    %% Plotting the results
+    % Plotting evolution of mass in each grain size category
+    figure(n)
+    plot(t,m1,'DisplayName','m1 evolution');
+    hold on;
+    plot(t,m2,'DisplayName','m2 evolution');
+    plot(t,m3,'DisplayName','m3 evolution');
+    plot(t,m4,'DisplayName','m4 evolution');
+    plot(t,m5,'DisplayName','m5 evolution');
+    xlabel('Time of comminution [s]');
+    ylabel('Mass of each category [kg]');
+
+    %Plotting of the point at which 99.9% of mass is comminuted to m5 size
+    %category
+    plot(t99_9(n),m99_9(n),'rO','DisplayName','99.9% mass comminuted');
+    plot([t99_9(n),t99_9(n)],[0,m99_9(n)],'k--','HandleVisibility','off');
+    plot([0,t99_9(n)],[m99_9(n),m99_9(n)],'k--','HandleVisibility','off');
+    hold off;
+    hlg=legend('FontSize',8,'Orientation','Horizontal');
+    hlg.NumColumns=2;
+    
+end
+
+%% Plotting and evaluating the optimum timestep
+figure(n+1)
+subplot(2,1,1);
+semilogx(delt,t99_9);
+xlabel('Time step [s]');
+ylabel('Time to comminute 99.9% mass to m5 [s]')
+subplot(2,1,2);
+semilogy(itn,err);
+xlabel('Iteration number');
+ylabel('Comparative error');
