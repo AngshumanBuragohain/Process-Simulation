@@ -2,6 +2,8 @@
 % m1,m2....m5 for given mass-dependent pulverisation rates s1,s2....s5
 % The initial mass fraction matrix is given and the process is described
 % by discontinuous milling given by: dmi/dt = -si*mi(t)+ ?sj*mj(t)*bi,j.
+% For details about the problem statement and the description of code
+% Refer to ((Crushing_Sand.pdf))
 % Aims:
 % 1. Solve the governing equations using RK4 method.
 % 2. Plot the mass evolution of each size category as a function of time.
